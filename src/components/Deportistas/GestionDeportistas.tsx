@@ -4,6 +4,7 @@ import { Deportista } from "../../models/Deportista";
 import { ServicioDeportistas } from "../../services/ServicioDeportistas";
 import EditarDeportistas from "./EditarDeportistas";
 import VerDeportistas from "./VerDeportistas";
+import RegistrarPago from "./RegistrarPago";
 
 const deportistaVacio = {
   id: "",
@@ -35,11 +36,19 @@ function GestionDeportistas() {
     useState<Deportista>(deportistaVacio);
   const [fotoDeportista, setFotoDeportista] = useState<string>("");
   const [fotoDocumento, setFotoDocumento] = useState<string>("");
+  const [isPagoOpen, setIsPagoOpen] = useState(false);
+  const [deportistaParaPago, setDeportistaParaPago] =
+    useState<Deportista>(deportistaVacio);
 
   const servicioDeportistas = ServicioDeportistas.getInstancia();
 
   function handleSelectDeportista(deportistaSelected: Deportista): void {
     setDeportistaSelected(deportistaSelected);
+  }
+
+  function handleRegistrarPago(deportista: Deportista): void {
+    setDeportistaParaPago(deportista);
+    setIsPagoOpen(true);
   }
 
   useEffect(() => {
@@ -81,6 +90,13 @@ function GestionDeportistas() {
 
   return (
     <>
+      <RegistrarPago
+        isOpen={isPagoOpen}
+        onClose={() => setIsPagoOpen(false)}
+        deportistaId={deportistaParaPago.id}
+        deportistaNombre={deportistaParaPago.nombre}
+        onPagoRegistrado={() => setIsPagoOpen(false)}
+      />
       <Center p="4">
         <Heading size="lg" textAlign="center">
           {!!!isEditing
@@ -93,6 +109,7 @@ function GestionDeportistas() {
           onNewDeportistaClick={handleNewDeportistaClick}
           servicioDeportistas={servicioDeportistas}
           onSelect={handleSelectDeportista}
+          onRegistrarPago={handleRegistrarPago}
           isEditing={isEditing}
         />
       ) : (

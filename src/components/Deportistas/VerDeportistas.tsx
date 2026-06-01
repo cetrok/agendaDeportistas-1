@@ -12,12 +12,13 @@ import {
 import { useEffect, useState } from "react";
 import { ServicioDeportistas } from "../../services/ServicioDeportistas";
 import { Deportista } from "../../models/Deportista";
-import { FaEye, FaTrashAlt, FaPlus } from "react-icons/fa";
+import { FaEye, FaTrashAlt, FaPlus, FaMoneyBillWave } from "react-icons/fa";
 
 type Props = {
   onNewDeportistaClick: (element: boolean) => void;
   servicioDeportistas: ServicioDeportistas;
   onSelect: (deportista: Deportista) => void;
+  onRegistrarPago: (deportista: Deportista) => void;
   isEditing: boolean;
 };
 
@@ -72,9 +73,15 @@ function VerDeportistas(props: Props) {
     const deportistaSelected = deportistas.find(
       (deportista) => deportista.id === id
     );
-    // Se selecciona el deportista para ver sus detalles o editarlos
     if (deportistaSelected != null) {
       props.onSelect(deportistaSelected);
+    }
+  };
+
+  const handleClickRegistrarPago = (id: string) => {
+    const deportistaSelected = deportistas.find((d) => d.id === id);
+    if (deportistaSelected != null) {
+      props.onRegistrarPago(deportistaSelected);
     }
   };
 
@@ -197,9 +204,19 @@ function VerDeportistas(props: Props) {
                     className="buttonSombreado"
                     onClick={() => handleClickVer(deportista.id)}
                     leftIcon={<FaEye />}
-                    style={{ marginRight: "8px" }}
+                    style={{ marginRight: "8px", marginBottom: "4px" }}
                   >
                     Ver
+                  </Button>
+                  <Button
+                    colorScheme="pink"
+                    size="sm"
+                    className="buttonSombreado"
+                    onClick={() => handleClickRegistrarPago(deportista.id)}
+                    leftIcon={<FaMoneyBillWave />}
+                    style={{ marginRight: "8px", marginBottom: "4px" }}
+                  >
+                    Pago
                   </Button>
                   <Button
                     colorScheme="blue"
@@ -207,6 +224,7 @@ function VerDeportistas(props: Props) {
                     className="buttonSombreado"
                     onClick={() => handleClickEliminar(deportista.id)}
                     leftIcon={<FaTrashAlt />}
+                    style={{ marginBottom: "4px" }}
                   >
                     Eliminar
                   </Button>

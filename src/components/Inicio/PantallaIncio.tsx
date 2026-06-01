@@ -3,6 +3,7 @@ import RecordatorioCumpleaños from "./RecordatorioCumpleaños";
 import { Center } from "@chakra-ui/react";
 import VerRecordatorios from "./VerRecordatorios";
 import EditRecordatorio from "./EditarRecordatorio";
+import AlertasPaquetes from "./AlertasPaquetes";
 import { useEffect, useState } from "react";
 import Recordatorio from "../../models/Recordatorio";
 import { ServicioRecordatorios } from "../../services/ServicioRecordatorios";
@@ -159,6 +160,23 @@ function PantallaInicio() {
           />
         </Box>
       </Flex>
+
+      {/* Sección Alertas — deportistas sin clases disponibles */}
+      <Box
+        mx={4}
+        mb={4}
+        bg="white"
+        border="2px solid"
+        borderColor="red.300"
+        borderRadius="2xl"
+        p={5}
+        boxShadow="0 4px 16px rgba(229,62,62,0.10)"
+      >
+        <Heading size="lg" mb={3}>
+          🚨 Alertas
+        </Heading>
+        <AlertasPaquetes />
+      </Box>
     </>
   );
 }
