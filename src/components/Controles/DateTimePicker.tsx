@@ -9,33 +9,34 @@ type Props = {
   label: string;
 };
 
-function DateTimePicker(props: Props) {
-  // Definir la interfaz para los props del componente CustomInput
-  interface CustomInputProps {
-    value?: string;
-    onClick?: () => void;
-  }
+// Definir la interfaz para los props del componente CustomInput fuera del componente
+interface CustomInputProps {
+  value?: string;
+  onClick?: () => void;
+}
 
-  // Componente de entrada personalizado para Chakra UI
-  const CustomInput = React.forwardRef<HTMLDivElement, CustomInputProps>(
-    ({ value, onClick }, ref) => (
-      <Box
-        as="button"
-        height="40px"
-        display="inline-flex"
-        alignItems="center"
-        justifyContent="center"
-        px={4}
-        border="1px solid"
-        borderColor="gray.300"
-        borderRadius="md"
-        onClick={onClick}
-        ref={ref}
-      >
-        {value}
-      </Box>
-    )
-  );
+// Extraer componente de entrada personalizado para evitar advertencias de ESLint
+const CustomInput = React.forwardRef<HTMLDivElement, CustomInputProps>(
+  ({ value, onClick }, ref) => (
+    <Box
+      as="button"
+      height="40px"
+      display="inline-flex"
+      alignItems="center"
+      justifyContent="center"
+      px={4}
+      border="1px solid"
+      borderColor="gray.300"
+      borderRadius="md"
+      onClick={onClick}
+      ref={ref}
+    >
+      {value}
+    </Box>
+  ),
+);
+
+function DateTimePicker(props: Props) {
   return (
     <>
       <FormControl isRequired={props.isRequired}>

@@ -10,7 +10,6 @@ import {
   Box,
   Image,
   Spacer,
-  Badge,
 } from "@chakra-ui/react";
 
 type Props = {

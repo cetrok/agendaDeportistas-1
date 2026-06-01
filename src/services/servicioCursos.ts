@@ -120,6 +120,16 @@ export class ServicioCursos {
     }
   }
 
+  // Función para actualizar un curso existente
+  public async actualizarCurso(curso: Curso): Promise<void> {
+    try {
+      await axios.put(this.ruta + "actualizar", curso);
+    } catch (error) {
+      console.log(error);
+      throw new Error("Failed to update curso");
+    }
+  }
+
   // Función para obtener un curso por su id
   public obtenerCursoPorId(id: number): Curso | undefined {
     return this.cursos.find((c) => c.idCurso === id);

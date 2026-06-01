@@ -14,7 +14,6 @@ import {
   Textarea,
   FormHelperText,
   Heading,
-  Text,
 } from "@chakra-ui/react";
 import { useState, useEffect } from "react";
 import { ServicioDeportistas } from "../../services/ServicioDeportistas";
@@ -88,31 +87,22 @@ function EditarDeportistas(props: Props) {
       direccion !== "" &&
       eps !== "" &&
       institucionEducativa !== "" &&
-      imagenPropia !== null &&
-      informacionMensualidad !== null &&
-      informacionReposicion !== null &&
-      informacionVacaciones !== null &&
-      comprobanteInscripcion !== null &&
       acudientes.length > 0 &&
-      fotoDeportista !== undefined &&
-      fotoDocumento !== undefined;
+      (props.isNewDeportista ? fotoDeportista !== null : true) &&
+      (props.isNewDeportista ? fotoDocumento !== null : true);
     setIsFormValid(isValid);
   }, [
     id,
     nombre,
     edad,
     tipoId,
+    direccion,
     eps,
     institucionEducativa,
-    grado,
-    imagenPropia,
-    informacionMensualidad,
-    informacionReposicion,
-    informacionVacaciones,
-    comprobanteInscripcion,
     acudientes,
     fotoDeportista,
     fotoDocumento,
+    props.isNewDeportista,
   ]);
 
   useEffect(() => {
@@ -128,12 +118,12 @@ function EditarDeportistas(props: Props) {
       setCondicionImportante(props.deportistaSelected.condicionImportante);
       setImagenPropia(props.deportistaSelected.imagenPropia);
       setInformacionMensualidad(
-        props.deportistaSelected.informacionMensualidad
+        props.deportistaSelected.informacionMensualidad,
       );
       setInformacionReposicion(props.deportistaSelected.informacionReposicion);
       setInformacionVacaciones(props.deportistaSelected.informacionVacaciones);
       setComprobanteInscripcion(
-        props.deportistaSelected.comprobanteInscripcion
+        props.deportistaSelected.comprobanteInscripcion,
       );
       if (props.isNewDeportista) {
         setAcudientes([]);
@@ -207,7 +197,7 @@ function EditarDeportistas(props: Props) {
       informacionReposicion,
       informacionVacaciones,
       comprobanteInscripcion,
-      acudientes
+      acudientes,
     );
 
     // Se envian los datos capturados a una base de datos
@@ -217,13 +207,13 @@ function EditarDeportistas(props: Props) {
       await props.servicioDeportistas?.crearDeportista(
         nuevoDeportista,
         fotoDeportista,
-        fotoDocumento
+        fotoDocumento,
       );
     } else {
       await props.servicioDeportistas?.actualizarDeportista(
         nuevoDeportista,
         fotoDeportista,
-        fotoDocumento
+        fotoDocumento,
       );
     }
 
@@ -232,7 +222,7 @@ function EditarDeportistas(props: Props) {
 
   const handleFileChange = async (
     nombre: string,
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = event.target.files;
     if (files) {
@@ -304,18 +294,21 @@ function EditarDeportistas(props: Props) {
 
   function handleSaveAcudiente(acudiente: Acudiente): void {
     if (acudiente !== null) {
+      const nuevosAcudientes = [...acudientes];
       if (isNewAcudiente) {
-        acudientes.push(acudiente);
+        nuevosAcudientes.push(acudiente);
       } else {
-        const index = acudientes.findIndex((ac) => ac.id === acudiente.id);
+        const index = nuevosAcudientes.findIndex(
+          (ac) => ac.id === acudiente.id,
+        );
         if (index > -1) {
-          acudientes[index] = acudiente;
+          nuevosAcudientes[index] = acudiente;
         } else {
           console.error("Acudiente not found.");
         }
       }
 
-      setAcudientes(acudientes);
+      setAcudientes(nuevosAcudientes);
     }
 
     setIsAcudientesOpen(false);
@@ -345,317 +338,345 @@ function EditarDeportistas(props: Props) {
         idDeportista={id}
         isNewElement={isNewAcudiente}
       ></EditarAcudientes>
-      <Box bg="white" borderRadius="2xl" border="2px solid" borderColor="#F48FB1" boxShadow="0 4px 20px rgba(233,30,140,0.1)" m={4} overflow="hidden">
-        <Box bgGradient="linear(to-r, #E91E8C, #C2185B, #1565C0, #29B6F6)" px={6} py={4}>
-          <Heading size="md" color="white" fontFamily="'Fredoka One', cursive" fontWeight="400">
-            🏃 {props.isNewDeportista ? "Nuevo Deportista" : "Editar Deportista"}
+      <Box
+        bg="white"
+        borderRadius="2xl"
+        border="2px solid"
+        borderColor="#F48FB1"
+        boxShadow="0 4px 20px rgba(233,30,140,0.1)"
+        m={4}
+        overflow="hidden"
+      >
+        <Box
+          bgGradient="linear(to-r, #E91E8C, #C2185B, #1565C0, #29B6F6)"
+          px={6}
+          py={4}
+        >
+          <Heading
+            size="md"
+            color="white"
+            fontFamily="'Fredoka One', cursive"
+            fontWeight="400"
+          >
+            🏃{" "}
+            {props.isNewDeportista ? "Nuevo Deportista" : "Editar Deportista"}
           </Heading>
         </Box>
         <Box p={5}>
-      <Grid
-        templateRows="repeat(2, 1fr)"
-        templateColumns="repeat(4, 1fr)"
-        gap={4}
-      >
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl isRequired>
-            <FormLabel>Nombre Deportista</FormLabel>
-            <Input
-              value={nombre}
-              placeholder="Digite el nombre del Deportista"
-              onChange={(e) => setNombreDeportista(e.target.value)}
-            />
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl isRequired>
-            <FormLabel>Tipo de identificación</FormLabel>
-            <Select
-              value={tipoId}
-              placeholder="Seleccione el numero de identificación"
-              onChange={(e) => setTipoId(e.target.value)}
-            >
-              <option value="Pasaporte">Tarjeta de identidad</option>
-              <option value="Cedula">Cédula</option>
-              <option value="Pasaporte">Pasaporte</option>
-              <option value="Pasaporte">Registro civil</option>
-            </Select>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl isRequired>
-            <FormLabel>Numero de Identificación</FormLabel>
-            <Input
-              readOnly={!props.isNewDeportista}
-              value={id}
-              placeholder="Digite el numero de Identificación"
-              onChange={(e) => setId(e.target.value)}
-            />
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <DateTimePicker
-            fechaNacimiento={fechaNacimiento}
-            setFechaNacimiento={setFechaNacimiento}
-            isRequired={true}
-            label={"Fecha de Nacimiento"}
-          />
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl>
-            <FormLabel>Edad</FormLabel>
-            <FormLabel>{mostrarEdad()}</FormLabel>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl isRequired>
-            <FormLabel>Dirección</FormLabel>
-            <Input
-              value={direccion}
-              placeholder="Digite la dirección"
-              onChange={(e) => setDireccion(e.target.value)}
-            />
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl isRequired>
-            <FormLabel>EPS</FormLabel>
-            <Input
-              value={eps}
-              placeholder="Digite el nombre de la EPS"
-              onChange={(e) => setEps(e.target.value)}
-            />
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl isRequired>
-            <FormLabel>Institucion educativa</FormLabel>
-            <Input
-              value={institucionEducativa}
-              placeholder="Digite la institucion educativa a la que pertenece el deportista"
-              onChange={(e) => setInstitucioneducativa(e.target.value)}
-            />
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={1}>
-          <FormControl isRequired>
-            <FormLabel>Grado</FormLabel>
-            <NumberInput
-              value={grado}
-              defaultValue={0}
-              onChange={(value) => setGrado(Number(value))}
-            >
-              <NumberInputField />
-            </NumberInput>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={3}>
-          <FormControl isRequired>
-            <FormLabel>Acudientes</FormLabel>
-            <VerAcudientes
-              onDelete={handlerDeleteAcudiente}
-              onClick={handleClickAcudientes}
-              acudientes={acudientes}
-            ></VerAcudientes>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={2} colSpan={4}>
-          <FormControl isRequired>
-            <FormLabel>{Constantes.CONDICION_IMPORTANTE_LABEL}</FormLabel>
-            <Textarea
-              value={condicionImportante}
-              placeholder="Indique si el deportista presenta alguna condicion importante"
-              onChange={(e) => setCondicionImportante(e.target.value)}
-            />
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={4}>
-          <FormControl isRequired>
-            <Checkbox
-              sx={{
-                "& .chakra-checkbox__control": {
-                  borderColor: "#E91E8C",
-                },
-                "& .chakra-checkbox__control[data-checked]": {
-                  bg: "#E91E8C",
-                  borderColor: "#E91E8C",
-                },
-              }}
-              isChecked={imagenPropia}
-              onChange={(e) => setImagenPropia(e.target.checked)}
-            >
-              <FormLabel>{Constantes.IMAGEN_PROPIA_LABEL}</FormLabel>
-            </Checkbox>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={4}>
-          <FormControl isRequired>
-            <Checkbox
-              sx={{
-                "& .chakra-checkbox__control": {
-                  borderColor: "#E91E8C",
-                },
-                "& .chakra-checkbox__control[data-checked]": {
-                  bg: "#E91E8C",
-                  borderColor: "#E91E8C",
-                },
-              }}
-              isChecked={informacionMensualidad}
-              onChange={(e) => setInformacionMensualidad(e.target.checked)}
-            >
-              <FormLabel>{Constantes.INFORMACION_MENSUALIDAD_LABEL}</FormLabel>
-            </Checkbox>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={4}>
-          <FormControl isRequired>
-            <Checkbox
-              sx={{
-                "& .chakra-checkbox__control": {
-                  borderColor: "#E91E8C",
-                },
-                "& .chakra-checkbox__control[data-checked]": {
-                  bg: "#E91E8C",
-                  borderColor: "#E91E8C",
-                },
-              }}
-              isChecked={informacionReposicion}
-              onChange={(e) => setInformacionReposicion(e.target.checked)}
-            >
-              <FormLabel>{Constantes.INFORMACION_REPOSICION_LABEL}</FormLabel>
-            </Checkbox>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={4}>
-          <FormControl isRequired>
-            <Checkbox
-              sx={{
-                "& .chakra-checkbox__control": {
-                  borderColor: "#E91E8C",
-                },
-                "& .chakra-checkbox__control[data-checked]": {
-                  bg: "#E91E8C",
-                  borderColor: "#E91E8C",
-                },
-              }}
-              isChecked={informacionVacaciones}
-              onChange={(e) => setInformacionVacaciones(e.target.checked)}
-            >
-              <FormLabel>{Constantes.INFORMACION_VACACIONES_LABEL}</FormLabel>
-            </Checkbox>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={4}>
-          <FormControl isRequired>
-            <Checkbox
-              sx={{
-                "& .chakra-checkbox__control": {
-                  borderColor: "#E91E8C",
-                },
-                "& .chakra-checkbox__control[data-checked]": {
-                  bg: "#E91E8C",
-                  borderColor: "#E91E8C",
-                },
-              }}
-              isChecked={comprobanteInscripcion}
-              onChange={(e) => setComprobanteInscripcion(e.target.checked)}
-            >
-              <FormLabel>{Constantes.COMPROBANTE_INSCRIPCION_LABEL}</FormLabel>
-            </Checkbox>
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={2}>
-          <FormControl isRequired>
-            <FormLabel>Foto del deportista</FormLabel>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                handleFileChange("Deportista", e);
-              }}
-            />
-            {errorMessage && (
-              <FormHelperText color="red.500">{errorMessage}</FormHelperText>
-            )}
-            {fotoDeportistaUrl != "" ? (
-              <Box mt={4}>
-                <Image
-                  src={fotoDeportistaUrl}
-                  alt="Sin Foto"
-                  maxW="400px"
-                  maxH="200px"
-                  borderRadius="md"
+          <Grid
+            templateRows="repeat(2, 1fr)"
+            templateColumns="repeat(4, 1fr)"
+            gap={4}
+          >
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl isRequired>
+                <FormLabel>Nombre Deportista</FormLabel>
+                <Input
+                  value={nombre}
+                  placeholder="Digite el nombre del Deportista"
+                  onChange={(e) => setNombreDeportista(e.target.value)}
                 />
-              </Box>
-            ) : (
-              <Box mt={4}>
-                <Image
-                  src={`data:image/jpeg;base64,${props.fotoDeportistaActual}`}
-                  alt="Sin Foto"
-                  maxW="400px"
-                  maxH="200px"
-                  borderRadius="md"
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl isRequired>
+                <FormLabel>Tipo de identificación</FormLabel>
+                <Select
+                  value={tipoId}
+                  placeholder="Seleccione el numero de identificación"
+                  onChange={(e) => setTipoId(e.target.value)}
+                >
+                  <option value="Pasaporte">Tarjeta de identidad</option>
+                  <option value="Cedula">Cédula</option>
+                  <option value="Pasaporte">Pasaporte</option>
+                  <option value="Pasaporte">Registro civil</option>
+                </Select>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl isRequired>
+                <FormLabel>Numero de Identificación</FormLabel>
+                <Input
+                  readOnly={!props.isNewDeportista}
+                  value={id}
+                  placeholder="Digite el numero de Identificación"
+                  onChange={(e) => setId(e.target.value)}
                 />
-              </Box>
-            )}
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={2}>
-          <FormControl isRequired>
-            <FormLabel>Foto del documento</FormLabel>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                handleFileChange("Documento", e);
-              }}
-            />
-            {fotoDocumentoUrl != "" ? (
-              <Box mt={4}>
-                <Image
-                  src={fotoDocumentoUrl}
-                  alt="Sin Foto"
-                  maxW="400px"
-                  maxH="200px"
-                  borderRadius="md"
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <DateTimePicker
+                fechaNacimiento={fechaNacimiento}
+                setFechaNacimiento={setFechaNacimiento}
+                isRequired={true}
+                label={"Fecha de Nacimiento"}
+              />
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl>
+                <FormLabel>Edad</FormLabel>
+                <FormLabel>{mostrarEdad()}</FormLabel>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl isRequired>
+                <FormLabel>Dirección</FormLabel>
+                <Input
+                  value={direccion}
+                  placeholder="Digite la dirección"
+                  onChange={(e) => setDireccion(e.target.value)}
                 />
-              </Box>
-            ) : (
-              <Box mt={4}>
-                <Image
-                  src={`data:image/jpeg;base64,${props.fotoDocumentoActual}`}
-                  alt="Sin Foto"
-                  maxW="400px"
-                  maxH="200px"
-                  borderRadius="md"
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl isRequired>
+                <FormLabel>EPS</FormLabel>
+                <Input
+                  value={eps}
+                  placeholder="Digite el nombre de la EPS"
+                  onChange={(e) => setEps(e.target.value)}
                 />
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl isRequired>
+                <FormLabel>Institucion educativa</FormLabel>
+                <Input
+                  value={institucionEducativa}
+                  placeholder="Digite la institucion educativa a la que pertenece el deportista"
+                  onChange={(e) => setInstitucioneducativa(e.target.value)}
+                />
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={1}>
+              <FormControl isRequired>
+                <FormLabel>Grado</FormLabel>
+                <NumberInput
+                  value={grado}
+                  defaultValue={0}
+                  onChange={(value) => setGrado(Number(value))}
+                >
+                  <NumberInputField />
+                </NumberInput>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={3}>
+              <FormControl isRequired>
+                <FormLabel>Acudientes</FormLabel>
+                <VerAcudientes
+                  onDelete={handlerDeleteAcudiente}
+                  onClick={handleClickAcudientes}
+                  acudientes={acudientes}
+                ></VerAcudientes>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={2} colSpan={4}>
+              <FormControl isRequired>
+                <FormLabel>{Constantes.CONDICION_IMPORTANTE_LABEL}</FormLabel>
+                <Textarea
+                  value={condicionImportante}
+                  placeholder="Indique si el deportista presenta alguna condicion importante"
+                  onChange={(e) => setCondicionImportante(e.target.value)}
+                />
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={4}>
+              <FormControl isRequired>
+                <Checkbox
+                  sx={{
+                    "& .chakra-checkbox__control": {
+                      borderColor: "#E91E8C",
+                    },
+                    "& .chakra-checkbox__control[data-checked]": {
+                      bg: "#E91E8C",
+                      borderColor: "#E91E8C",
+                    },
+                  }}
+                  isChecked={imagenPropia}
+                  onChange={(e) => setImagenPropia(e.target.checked)}
+                >
+                  <FormLabel>{Constantes.IMAGEN_PROPIA_LABEL}</FormLabel>
+                </Checkbox>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={4}>
+              <FormControl isRequired>
+                <Checkbox
+                  sx={{
+                    "& .chakra-checkbox__control": {
+                      borderColor: "#E91E8C",
+                    },
+                    "& .chakra-checkbox__control[data-checked]": {
+                      bg: "#E91E8C",
+                      borderColor: "#E91E8C",
+                    },
+                  }}
+                  isChecked={informacionMensualidad}
+                  onChange={(e) => setInformacionMensualidad(e.target.checked)}
+                >
+                  <FormLabel>
+                    {Constantes.INFORMACION_MENSUALIDAD_LABEL}
+                  </FormLabel>
+                </Checkbox>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={4}>
+              <FormControl isRequired>
+                <Checkbox
+                  sx={{
+                    "& .chakra-checkbox__control": {
+                      borderColor: "#E91E8C",
+                    },
+                    "& .chakra-checkbox__control[data-checked]": {
+                      bg: "#E91E8C",
+                      borderColor: "#E91E8C",
+                    },
+                  }}
+                  isChecked={informacionReposicion}
+                  onChange={(e) => setInformacionReposicion(e.target.checked)}
+                >
+                  <FormLabel>
+                    {Constantes.INFORMACION_REPOSICION_LABEL}
+                  </FormLabel>
+                </Checkbox>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={4}>
+              <FormControl isRequired>
+                <Checkbox
+                  sx={{
+                    "& .chakra-checkbox__control": {
+                      borderColor: "#E91E8C",
+                    },
+                    "& .chakra-checkbox__control[data-checked]": {
+                      bg: "#E91E8C",
+                      borderColor: "#E91E8C",
+                    },
+                  }}
+                  isChecked={informacionVacaciones}
+                  onChange={(e) => setInformacionVacaciones(e.target.checked)}
+                >
+                  <FormLabel>
+                    {Constantes.INFORMACION_VACACIONES_LABEL}
+                  </FormLabel>
+                </Checkbox>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={4}>
+              <FormControl isRequired>
+                <Checkbox
+                  sx={{
+                    "& .chakra-checkbox__control": {
+                      borderColor: "#E91E8C",
+                    },
+                    "& .chakra-checkbox__control[data-checked]": {
+                      bg: "#E91E8C",
+                      borderColor: "#E91E8C",
+                    },
+                  }}
+                  isChecked={comprobanteInscripcion}
+                  onChange={(e) => setComprobanteInscripcion(e.target.checked)}
+                >
+                  <FormLabel>
+                    {Constantes.COMPROBANTE_INSCRIPCION_LABEL}
+                  </FormLabel>
+                </Checkbox>
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={2}>
+              <FormControl isRequired>
+                <FormLabel>Foto del deportista</FormLabel>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    handleFileChange("Deportista", e);
+                  }}
+                />
+                {errorMessage && (
+                  <FormHelperText color="red.500">
+                    {errorMessage}
+                  </FormHelperText>
+                )}
+                {fotoDeportistaUrl != "" ? (
+                  <Box mt={4}>
+                    <Image
+                      src={fotoDeportistaUrl}
+                      alt="Sin Foto"
+                      maxW="400px"
+                      maxH="200px"
+                      borderRadius="md"
+                    />
+                  </Box>
+                ) : (
+                  <Box mt={4}>
+                    <Image
+                      src={`data:image/jpeg;base64,${props.fotoDeportistaActual}`}
+                      alt="Sin Foto"
+                      maxW="400px"
+                      maxH="200px"
+                      borderRadius="md"
+                    />
+                  </Box>
+                )}
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={2}>
+              <FormControl isRequired>
+                <FormLabel>Foto del documento</FormLabel>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    handleFileChange("Documento", e);
+                  }}
+                />
+                {fotoDocumentoUrl != "" ? (
+                  <Box mt={4}>
+                    <Image
+                      src={fotoDocumentoUrl}
+                      alt="Sin Foto"
+                      maxW="400px"
+                      maxH="200px"
+                      borderRadius="md"
+                    />
+                  </Box>
+                ) : (
+                  <Box mt={4}>
+                    <Image
+                      src={`data:image/jpeg;base64,${props.fotoDocumentoActual}`}
+                      alt="Sin Foto"
+                      maxW="400px"
+                      maxH="200px"
+                      borderRadius="md"
+                    />
+                  </Box>
+                )}
+              </FormControl>
+            </GridItem>
+            <GridItem rowSpan={1} colSpan={4}>
+              <Box display="flex" gap={3} mt={4} justifyContent="flex-end">
+                <Button
+                  className="buttonSombreado"
+                  colorScheme="blue"
+                  variant="outline"
+                  onClick={() => handleClickCancelar(false)}
+                  leftIcon={<FaRegTimesCircle />}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  colorScheme={isFormValid ? "blue" : "gray"}
+                  className="buttonSombreado"
+                  onClick={() => handleClickGuardar()}
+                  isDisabled={!isFormValid}
+                  leftIcon={<FaSave />}
+                >
+                  Guardar
+                </Button>
               </Box>
-            )}
-          </FormControl>
-        </GridItem>
-        <GridItem rowSpan={1} colSpan={4}>
-          <Box display="flex" gap={3} mt={4} justifyContent="flex-end">
-            <Button
-              className="buttonSombreado"
-              colorScheme="blue"
-              variant="outline"
-              onClick={() => handleClickCancelar(false)}
-              leftIcon={<FaRegTimesCircle />}
-            >
-              Cancelar
-            </Button>
-            <Button
-              colorScheme={isFormValid ? "blue" : "gray"}
-              className="buttonSombreado"
-              onClick={() => handleClickGuardar()}
-              isDisabled={!isFormValid}
-              leftIcon={<FaSave />}
-            >
-              Guardar
-            </Button>
-          </Box>
-        </GridItem>
-      </Grid>
+            </GridItem>
+          </Grid>
         </Box>
       </Box>
     </>
