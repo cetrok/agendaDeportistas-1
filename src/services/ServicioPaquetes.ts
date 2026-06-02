@@ -45,4 +45,14 @@ export class ServicioPaquetes {
       return [];
     }
   }
+
+  public async obtenerIdsSinPaqueteActivo(): Promise<string[]> {
+    try {
+      const response = await axios.get<string[]>(this.ruta + "sinActivo");
+      return response.data;
+    } catch (error) {
+      console.error("Error obteniendo IDs sin paquete activo:", error);
+      return [];
+    }
+  }
 }

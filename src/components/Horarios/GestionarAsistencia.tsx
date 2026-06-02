@@ -32,6 +32,7 @@ import { Grupo } from "../../models/Grupo";
 import { Profesor } from "../../models/Profesor";
 import { Curso } from "../../models/Curso";
 import ServicioAsistencia from "../../services/ServicioAsistencia";
+import { ServicioPaquetes } from "../../services/ServicioPaquetes";
 
 type Props = {
   isGestionarAsistenciaOpen: boolean;
@@ -50,6 +51,7 @@ function GestionarAsistencia(props: Props) {
   );
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [asistencias, setAsistencias] = useState<Record<number, boolean>>({});
+  const [sinPaquete, setSinPaquete] = useState<Set<string>>(new Set());
   const [guardando, setGuardando] = useState(false);
   const toast = useToast();
 
@@ -57,6 +59,13 @@ function GestionarAsistencia(props: Props) {
     "Domingo", "Lunes", "Martes", "Miércoles",
     "Jueves", "Viernes", "Sábado",
   ];
+
+  useEffect(() => {
+    if (!props.isGestionarAsistenciaOpen) return;
+    ServicioPaquetes.getInstancia().obtenerIdsSinPaqueteActivo().then((ids) => {
+      setSinPaquete(new Set(ids));
+    });
+  }, [props.isGestionarAsistenciaOpen]);
 
   // Cuando se abre con un grupo específico, auto-seleccionar la fecha más reciente de ese día
   useEffect(() => {
@@ -98,21 +107,49 @@ function GestionarAsistencia(props: Props) {
       const init: Record<number, boolean> = {};
       filtradas.forEach((a) => {
         const guardada = guardadas.find((g) => g.agenda?.idAgenda === a.idAgenda);
-        init[a.idAgenda] = guardada ? guardada.asistio : true;
+        init[a.idAgenda] = guardada ? guardada.asistio : false;
       });
       setAsistencias(init);
     });
   }, [selectedDate, props.agendas, props.grupos, props.grupoFiltro]);
 
-  const handleToggleAsistencia = (idAgenda: number) => {
+  const handleToggleAsistencia = (idAgenda: number, deportistaId?: string) => {
+    if (deportistaId && sinPaquete.has(deportistaId) && !asistencias[idAgenda]) {
+      toast({
+        title: "Sin paquete activo",
+        description: "Este deportista no tiene un paquete de clases vigente. Registra un pago primero.",
+        status: "warning",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
     setAsistencias((prev) => ({ ...prev, [idAgenda]: !prev[idAgenda] }));
   };
 
   const handleGuardar = async () => {
+    // Validación previa: ningún deportista sin paquete puede quedar como presente
+    const sinPaquetePresentes = agendas.filter(
+      (a) => asistencias[a.idAgenda] === true && a.deportista?.id && sinPaquete.has(a.deportista.id)
+    );
+    if (sinPaquetePresentes.length > 0) {
+      const nombres = sinPaquetePresentes.map((a) => a.deportista?.nombre ?? "—").join(", ");
+      toast({
+        title: "No se puede guardar",
+        description: `Sin paquete activo: ${nombres}. Registra un pago primero.`,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+
     setGuardando(true);
     try {
       const lista: Asistencia[] = agendas.map((agenda) =>
-        new Asistencia(0, agenda, selectedDate, asistencias[agenda.idAgenda] !== false)
+        new Asistencia(0, agenda, selectedDate, asistencias[agenda.idAgenda] === true)
       );
       await ServicioAsistencia.getInstancia().guardarAsistencias(lista);
       toast({
@@ -124,12 +161,15 @@ function GestionarAsistencia(props: Props) {
         position: "top",
       });
       props.onSave();
-    } catch {
+    } catch (error: unknown) {
+      const mensaje =
+        (error as { response?: { data?: string } })?.response?.data ||
+        "No se pudo conectar con el servidor. Intenta de nuevo.";
       toast({
         title: "Error al guardar",
-        description: "No se pudo conectar con el servidor. Intenta de nuevo.",
+        description: mensaje,
         status: "error",
-        duration: 4000,
+        duration: 5000,
         isClosable: true,
         position: "top",
       });
@@ -138,7 +178,7 @@ function GestionarAsistencia(props: Props) {
     }
   };
 
-  const presentes = agendas.filter((a) => asistencias[a.idAgenda] !== false).length;
+  const presentes = agendas.filter((a) => asistencias[a.idAgenda] === true).length;
   const ausentes = agendas.length - presentes;
 
   const obtenerGrupoCompleto = (agenda: Agenda) =>
@@ -254,7 +294,9 @@ function GestionarAsistencia(props: Props) {
                 </Thead>
                 <Tbody>
                   {agendas.map((agenda, index) => {
-                    const asistio = asistencias[agenda.idAgenda] !== false;
+                    const asistio = asistencias[agenda.idAgenda] === true;
+                    const deportistaId = agenda.deportista?.id;
+                    const tienePaquete = !deportistaId || !sinPaquete.has(deportistaId);
                     return (
                       <Tr key={index}>
                         <Td textAlign="center" fontSize="sm">
@@ -273,19 +315,32 @@ function GestionarAsistencia(props: Props) {
                           <HStack justify="center" spacing={2}>
                             <Switch
                               isChecked={asistio}
-                              onChange={() => handleToggleAsistencia(agenda.idAgenda)}
+                              onChange={() => handleToggleAsistencia(agenda.idAgenda, deportistaId)}
                               colorScheme="green"
                               size="md"
+                              isDisabled={!tienePaquete}
                             />
-                            <Badge
-                              colorScheme={asistio ? "green" : "red"}
-                              fontSize="xs"
-                              px={2}
-                              py={0.5}
-                              borderRadius="full"
-                            >
-                              {asistio ? "Presente" : "Ausente"}
-                            </Badge>
+                            {tienePaquete ? (
+                              <Badge
+                                colorScheme={asistio ? "green" : "red"}
+                                fontSize="xs"
+                                px={2}
+                                py={0.5}
+                                borderRadius="full"
+                              >
+                                {asistio ? "Presente" : "Ausente"}
+                              </Badge>
+                            ) : (
+                              <Badge
+                                colorScheme="orange"
+                                fontSize="xs"
+                                px={2}
+                                py={0.5}
+                                borderRadius="full"
+                              >
+                                Sin paquete
+                              </Badge>
+                            )}
                           </HStack>
                         </Td>
                       </Tr>
