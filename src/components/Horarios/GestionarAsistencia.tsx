@@ -52,6 +52,7 @@ function GestionarAsistencia(props: Props) {
   const [agendas, setAgendas] = useState<Agenda[]>([]);
   const [asistencias, setAsistencias] = useState<Record<number, boolean>>({});
   const [sinPaquete, setSinPaquete] = useState<Set<string>>(new Set());
+  const [conRegistro, setConRegistro] = useState<Set<number>>(new Set());
   const [guardando, setGuardando] = useState(false);
   const toast = useToast();
 
@@ -105,16 +106,21 @@ function GestionarAsistencia(props: Props) {
     // Cargar asistencias ya guardadas para esta fecha y aplicarlas
     ServicioAsistencia.getInstancia().obtenerAsistenciasPorFecha(selectedDate).then((guardadas) => {
       const init: Record<number, boolean> = {};
+      const registradas = new Set<number>();
       filtradas.forEach((a) => {
         const guardada = guardadas.find((g) => g.agenda?.idAgenda === a.idAgenda);
         init[a.idAgenda] = guardada ? guardada.asistio : false;
+        if (guardada) registradas.add(a.idAgenda);
       });
       setAsistencias(init);
+      setConRegistro(registradas);
     });
   }, [selectedDate, props.agendas, props.grupos, props.grupoFiltro]);
 
   const handleToggleAsistencia = (idAgenda: number, deportistaId?: string) => {
-    if (deportistaId && sinPaquete.has(deportistaId) && !asistencias[idAgenda]) {
+    const yaRegistrado = conRegistro.has(idAgenda);
+    const intentaMarcarPresente = !asistencias[idAgenda];
+    if (!yaRegistrado && deportistaId && sinPaquete.has(deportistaId) && intentaMarcarPresente) {
       toast({
         title: "Sin paquete activo",
         description: "Este deportista no tiene un paquete de clases vigente. Registra un pago primero.",
@@ -129,9 +135,13 @@ function GestionarAsistencia(props: Props) {
   };
 
   const handleGuardar = async () => {
-    // Validación previa: ningún deportista sin paquete puede quedar como presente
+    // Validación previa: sin paquete + sin registro previo + marcado como presente
     const sinPaquetePresentes = agendas.filter(
-      (a) => asistencias[a.idAgenda] === true && a.deportista?.id && sinPaquete.has(a.deportista.id)
+      (a) =>
+        asistencias[a.idAgenda] === true &&
+        !conRegistro.has(a.idAgenda) &&
+        a.deportista?.id &&
+        sinPaquete.has(a.deportista.id)
     );
     if (sinPaquetePresentes.length > 0) {
       const nombres = sinPaquetePresentes.map((a) => a.deportista?.nombre ?? "—").join(", ");
@@ -297,6 +307,8 @@ function GestionarAsistencia(props: Props) {
                     const asistio = asistencias[agenda.idAgenda] === true;
                     const deportistaId = agenda.deportista?.id;
                     const tienePaquete = !deportistaId || !sinPaquete.has(deportistaId);
+                    const yaRegistrado = conRegistro.has(agenda.idAgenda);
+                    const mostrarSinPaquete = !tienePaquete && !yaRegistrado;
                     return (
                       <Tr key={index}>
                         <Td textAlign="center" fontSize="sm">
@@ -320,17 +332,7 @@ function GestionarAsistencia(props: Props) {
                               size="md"
                               isDisabled={!tienePaquete}
                             />
-                            {tienePaquete ? (
-                              <Badge
-                                colorScheme={asistio ? "green" : "red"}
-                                fontSize="xs"
-                                px={2}
-                                py={0.5}
-                                borderRadius="full"
-                              >
-                                {asistio ? "Presente" : "Ausente"}
-                              </Badge>
-                            ) : (
+                            {mostrarSinPaquete ? (
                               <Badge
                                 colorScheme="orange"
                                 fontSize="xs"
@@ -339,6 +341,16 @@ function GestionarAsistencia(props: Props) {
                                 borderRadius="full"
                               >
                                 Sin paquete
+                              </Badge>
+                            ) : (
+                              <Badge
+                                colorScheme={asistio ? "green" : "red"}
+                                fontSize="xs"
+                                px={2}
+                                py={0.5}
+                                borderRadius="full"
+                              >
+                                {asistio ? "Presente" : "Ausente"}
                               </Badge>
                             )}
                           </HStack>
